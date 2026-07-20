@@ -1060,6 +1060,7 @@ footer#endcard.gated.open{display:flex}
 
   function showStatus(text,cls){
     if(!stepStatus)return;
+    stepStatus.hidden=false;
     stepStatus.textContent=text;
     stepStatus.className='step-status show '+cls;
   }
