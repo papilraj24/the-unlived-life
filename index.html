@@ -1069,7 +1069,7 @@ footer#endcard.gated.open{display:flex}
     if(!v||v===lastSent)return;
     if(FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID'))return; // not configured yet — skip silently
     lastSent=v;
-    showStatus('Saving…','');
+    showStatus('…','');
     fetch(FORMSPREE_ENDPOINT,{
       method:'POST',
       headers:{'Accept':'application/json','Content-Type':'application/json'},
@@ -1079,10 +1079,10 @@ footer#endcard.gated.open{display:flex}
         submitted_at:new Date().toISOString()
       })
     }).then(res=>{
-      if(res.ok){showStatus('Saved ✓','ok');}
-      else{showStatus('Couldn’t save — please try again','err');lastSent='';}
+      if(res.ok){showStatus('Heard. You are not alone in this.','ok');}
+      else{showStatus('That didn’t quite reach us — try once more?','err');lastSent='';}
     }).catch(()=>{
-      showStatus('Couldn’t save — check your connection','err');
+      showStatus('That didn’t quite reach us — try once more?','err');
       lastSent=''; /* allow retry, but never block the reader's experience */
     });
   }
