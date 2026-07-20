@@ -560,6 +560,9 @@ footer#endcard.gated.open{display:flex}
 }
 
 /* personal step */
+#stepScene{
+  background:radial-gradient(ellipse 80% 60% at 50% 45%,#fffaf0 0%,#fdeedd 45%,#f6d9b8 100%);
+}
 #stepScene .step-label{
   display:block;margin-top:2.6rem;
   font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;
@@ -578,6 +581,13 @@ footer#endcard.gated.open{display:flex}
   margin-top:1rem;font-size:.72rem;letter-spacing:.03em;color:#9a7f66;
   max-width:34ch;margin-left:auto;margin-right:auto;
 }
+.step-status{
+  margin-top:.8rem;font-size:.78rem;letter-spacing:.03em;font-weight:600;
+  opacity:0;transition:opacity .5s ease;
+}
+.step-status.show{opacity:1}
+.step-status.ok{color:#4a7a3c}
+.step-status.err{color:#a4551f}
 .your-step{
   margin-top:2.2rem;font-family:'Cormorant Garamond',serif;font-style:italic;
   font-size:clamp(1.2rem,3vw,1.6rem);color:#7a4a22;max-width:34ch;
@@ -834,6 +844,7 @@ footer#endcard.gated.open{display:flex}
     <label class="step-label reveal d1" for="stepInput">What is one thing fear has told you not to do?</label>
     <input class="step-input reveal d2" id="stepInput" type="text" maxlength="90" placeholder="write it in a few words…" autocomplete="off">
     <p class="step-consent reveal d3">Shared anonymously with the Heartfulness team — no name, no email, nothing that identifies you.</p>
+    <p class="step-status" id="stepStatus" hidden></p>
   </section>
   </div><!-- /afterKey -->
 </section>
@@ -1044,12 +1055,20 @@ footer#endcard.gated.open{display:flex}
 
   const stepInput=document.getElementById('stepInput');
   const yourStep=document.getElementById('yourStep');
+  const stepStatus=document.getElementById('stepStatus');
   let sendTimer=null,lastSent='';
+
+  function showStatus(text,cls){
+    if(!stepStatus)return;
+    stepStatus.textContent=text;
+    stepStatus.className='step-status show '+cls;
+  }
 
   function sendAnswer(v){
     if(!v||v===lastSent)return;
     if(FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID'))return; // not configured yet — skip silently
     lastSent=v;
+    showStatus('Saving…','');
     fetch(FORMSPREE_ENDPOINT,{
       method:'POST',
       headers:{'Accept':'application/json','Content-Type':'application/json'},
@@ -1058,7 +1077,13 @@ footer#endcard.gated.open{display:flex}
         source:'The Unlived Life — interactive page',
         submitted_at:new Date().toISOString()
       })
-    }).catch(()=>{ /* fail silently — never interrupt the reader's experience */ });
+    }).then(res=>{
+      if(res.ok){showStatus('Saved ✓','ok');}
+      else{showStatus('Couldn’t save — please try again','err');lastSent='';}
+    }).catch(()=>{
+      showStatus('Couldn’t save — check your connection','err');
+      lastSent=''; /* allow retry, but never block the reader's experience */
+    });
   }
 
   if(stepInput&&yourStep){
@@ -1071,10 +1096,19 @@ footer#endcard.gated.open{display:flex}
       }else{
         yourStep.hidden=true;
       }
+      if(stepStatus)stepStatus.classList.remove('show');
       clearTimeout(sendTimer);
       sendTimer=setTimeout(()=>sendAnswer(v),1200); // debounce while they finish typing
     });
     stepInput.addEventListener('blur',()=>sendAnswer(stepInput.value.trim()));
+    stepInput.addEventListener('keydown',(e)=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        clearTimeout(sendTimer);
+        sendAnswer(stepInput.value.trim());
+        stepInput.blur();
+      }
+    });
   }
 })();
 </script>
