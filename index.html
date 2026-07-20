@@ -464,6 +464,36 @@ footer#endcard.gated.open{display:flex}
   box-shadow:inset 0 40px 60px -30px rgba(0,0,0,.6), inset 0 -40px 60px -30px rgba(0,0,0,.6);
 }
 .key-hold-wrap{position:relative;margin-top:3.4rem;display:flex;flex-direction:column;align-items:center}
+
+/* strong attention cue: pulsing halo that says "this is interactive, act now" */
+.attn-pulse{
+  position:absolute;left:50%;top:calc(clamp(150px,34vw,210px)/2);
+  transform:translate(-50%,-50%);
+  width:clamp(150px,34vw,210px);height:clamp(150px,34vw,210px);
+  border-radius:50%;
+  border:2px solid rgba(255,213,128,.55);
+  pointer-events:none;
+  animation:attnPulse 2.2s ease-out infinite;
+}
+@keyframes attnPulse{
+  0%{transform:translate(-50%,-50%) scale(1);opacity:.9}
+  80%{opacity:0}
+  100%{transform:translate(-50%,-50%) scale(1.55);opacity:0}
+}
+.key-hold.holding ~ .attn-pulse,.key-hold.turned ~ .attn-pulse{display:none}
+
+.key-action-cue{
+  margin-top:1.6rem;
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;
+  font-size:clamp(1.05rem,2.6vw,1.3rem);
+  color:var(--amber);text-align:center;
+  animation:cueBob 1.8s ease-in-out infinite;
+}
+.tap-icon{display:inline-block;animation:tapPoke 1.8s ease-in-out infinite}
+@keyframes cueBob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+@keyframes tapPoke{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-8deg)}}
+.key-hold.holding + * .key-action-cue,
+.key-action-cue.done{animation:none;opacity:0;height:0;margin:0;overflow:hidden;transition:opacity .4s}
 .key-hold{
   position:relative;width:clamp(150px,34vw,210px);height:clamp(150px,34vw,210px);
   border-radius:50%;border:none;cursor:pointer;
@@ -729,6 +759,7 @@ footer#endcard.gated.open{display:flex}
     <p class="vo reveal d1" style="margin-top:1.6rem;color:#f0d9bd">The old man never picked up his key.<br><em style="color:#ffd9a8">Yours is here.</em></p>
 
     <div class="key-hold-wrap reveal d2">
+      <div class="attn-pulse" id="attnPulse" aria-hidden="true"></div>
       <div class="fear-wisps" id="fearWisps"></div>
       <button class="key-hold" id="keyHold" aria-label="Press and hold the key to turn it. Hold through the hesitation.">
         <svg viewBox="0 0 120 120" class="ring-svg" aria-hidden="true">
@@ -745,7 +776,8 @@ footer#endcard.gated.open{display:flex}
           </g>
         </svg>
       </button>
-      <p class="key-instruct" id="keyInstruct">Press and hold. Don’t let go when it feels pointless.</p>
+      <p class="key-action-cue" id="keyActionCue"><span class="tap-icon" aria-hidden="true">☝</span> Press and hold the key — don't just scroll past</p>
+      <p class="key-instruct" id="keyInstruct">Don’t let go when it feels pointless.</p>
       <p class="fear-whisper" id="fearWhisper" aria-live="polite"></p>
       <button class="skip-link" id="skipKey" type="button" hidden>Struggling? Continue anyway.</button>
     </div>
@@ -904,6 +936,8 @@ footer#endcard.gated.open{display:flex}
   const whisper=document.getElementById('fearWhisper');
   const instruct=document.getElementById('keyInstruct');
   const wisps=document.getElementById('fearWisps');
+  const actionCue=document.getElementById('keyActionCue');
+  const attnPulse=document.getElementById('attnPulse');
   const CIRC=339.3;
   const HOLD_MS=reduced?250:1900;
   let holdStart=null,raf=null,turned=false,releases=0;
@@ -940,6 +974,8 @@ footer#endcard.gated.open{display:flex}
     keyBtn.classList.add('holding');
     wisps&&wisps.classList.add('active');
     whisper.classList.remove('show');
+    if(actionCue)actionCue.classList.add('done');
+    if(attnPulse)attnPulse.style.display='none';
     holdStart=performance.now();
     raf=requestAnimationFrame(tick);
   }
@@ -964,6 +1000,8 @@ footer#endcard.gated.open{display:flex}
     keyBtn.classList.add('turned');
     wisps&&wisps.classList.remove('active');
     whisper.classList.remove('show');
+    if(actionCue)actionCue.classList.add('done');
+    if(attnPulse)attnPulse.style.display='none';
     instruct.textContent='The key has turned.';
     /* flash of light */
     const f=document.createElement('div');f.className='turn-flash';
